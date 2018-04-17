@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="moeye-core" />
+        <module name="moeye-hotcode" />
+        <module name="moeye-rpc" />
+        <module name="moeye-test" />
+        <module name="moeye-web" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="moeye-core" target="1.8" />
+      <module name="moeye-hotcode" target="1.5" />
+      <module name="moeye-root" target="1.5" />
+      <module name="moeye-rpc" target="1.8" />
+      <module name="moeye-test" target="1.6" />
+      <module name="moeye-web" target="1.5" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

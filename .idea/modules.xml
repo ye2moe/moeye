@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/moeye-core/moeye-core.iml" filepath="$PROJECT_DIR$/moeye-core/moeye-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moeye-hotcode/moeye-hotcode.iml" filepath="$PROJECT_DIR$/moeye-hotcode/moeye-hotcode.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moeye-root.iml" filepath="$PROJECT_DIR$/moeye-root.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moeye-rpc/moeye-rpc.iml" filepath="$PROJECT_DIR$/moeye-rpc/moeye-rpc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moeye-test/moeye-test.iml" filepath="$PROJECT_DIR$/moeye-test/moeye-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moeye-web/moeye-web.iml" filepath="$PROJECT_DIR$/moeye-web/moeye-web.iml" />
+    </modules>
+  </component>
+</project>
