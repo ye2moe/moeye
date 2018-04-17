@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -27,10 +28,9 @@ public class ClassUtil {
 
 			while (urls.hasMoreElements()) {
 				URL url = urls.nextElement();
-				System.out.println(url.getPath());
                 if (url != null) {
                 	String protocol = url.getProtocol();
-                	String pkgPath = url.getPath();
+                	String pkgPath = URLDecoder.decode(url.getPath(),"UTF-8");
                 	//System.out.println("protocol:" + protocol +" path:" + pkgPath);
                     if ("file".equals(protocol)) {
                     	// 本地自己可见的代码

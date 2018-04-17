@@ -20,7 +20,6 @@ public class MoeyeApplication {
     static boolean isWebStart = false;
 
     public static void run(Class<?> clz, String[] args) {
-        String rootPackage = getRootPckName(clz);
 
         //自动配置
         if (clz.isAnnotationPresent(AutoConfig.class)) {
@@ -31,8 +30,9 @@ public class MoeyeApplication {
             Resources reAno = clz.getAnnotation(Resources.class);
             ApplicationContext.setProperties(reAno.value());
         }
-        
 
+
+        String rootPackage = getRootPckName(clz);
         ApplicationContext.init(rootPackage);
 
         //开启rpc服务器
@@ -57,6 +57,10 @@ public class MoeyeApplication {
 
             String info = ApplicationContext.getProperties().get(Constant.ZOOKEEPER_SETTING)
                     +";" +ApplicationContext.getProperties().get(Constant.RPC_SERVICE_SETTING);
+            if(info.contains("null")){
+                logger.error("rpc server start error，can not find config file !");
+                return ;
+            }
             server.start(info);
 
         } catch (ClassNotFoundException e) {
@@ -78,7 +82,11 @@ public class MoeyeApplication {
 
     private static void WebServerStart(String value) {
         value = propertiesCheck(value);
-        web(Integer.parseInt(value));
+        try {
+            web(Integer.parseInt(value));
+        }catch (NumberFormatException ex){
+            logger.error(" web Server 格式錯誤: " +value);
+        }
     }
 
     private static String propertiesCheck(String value) {

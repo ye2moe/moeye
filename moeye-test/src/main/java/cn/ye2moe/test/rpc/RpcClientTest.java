@@ -37,7 +37,7 @@ public class RpcClientTest {
                 @Override
                 public void run() {
                     for(int j = 0;j< 1000000000; j++){
-                        String res = helloService.hello();
+                        String res = helloService.hello("abc",j);
                         if(j%10000 == 0){
                             System.out.println(res);
                         }

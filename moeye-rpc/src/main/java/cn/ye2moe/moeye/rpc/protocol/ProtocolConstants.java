@@ -1,5 +1,8 @@
 package cn.ye2moe.moeye.rpc.protocol;
 
+/**
+ *  协议常量
+ */
 public class ProtocolConstants {
     public final static int HEADER_SIZE = 16;
 

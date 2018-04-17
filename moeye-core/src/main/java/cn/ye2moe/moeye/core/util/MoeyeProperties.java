@@ -1,13 +1,14 @@
 package cn.ye2moe.moeye.core.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 配置中心
+ */
 public class MoeyeProperties {
 
     Properties properties = new Properties(); //配置管理map
@@ -39,19 +40,30 @@ public class MoeyeProperties {
 
     private List<String> scanAll() {
         List<String> fs = new ArrayList<>();
-        reScan(fs,this.getClass().getResource(File.separator).getFile());
+
+        try {
+            String url = System.getProperty("user.dir");//this.getClass().getResource(File.separator).getFile();
+            url = URLDecoder.decode(url,"UTF-8");
+            System.out.println(url);
+            reScan(fs,url);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         return fs;
     }
-    private void reScan(List<String> fs , String url){
+    private void reScan(List<String> fs , String url) throws UnsupportedEncodingException {
+
         File ff = new File(url);
         for(File f : ff.listFiles()){
+            String utf8Url = URLDecoder.decode(f.getPath(),"UTF-8");
             if(f.isDirectory())
-                reScan(fs,f.getPath());
+                reScan(fs,utf8Url);
             else{
                 if(!f.getName().endsWith(".properties"))
                     continue;
-                fs.add(f.getPath().replace(this.getClass().getResource(File.separator).getFile(),""));
-                //System.out.println(f.getPath().replace(this.getClass().getResource(File.separator).getFile(),""));
+                String file  =utf8Url.replace(URLDecoder.decode(System.getProperty("user.dir")+File.separator,"utf-8"),"");
+                fs.add(file);
+                System.out.println("***** "+file);
             }
         }
     }
@@ -100,7 +112,10 @@ public class MoeyeProperties {
         //读取过的文件不会再次读取
         if(readRecordMap.containsKey(p))
             return false;
-        String path = this.getClass().getResource(File.separatorChar + p).getPath();
+        p  =  System.getProperty("user.dir") + File.separatorChar +p;
+        //System.out.println(File.separatorChar + p);
+        //System.out.println(ClassLoader.getSystemResource(File.separatorChar + p));
+        String path =p;//ClassLoader.getSystemResource(File.separatorChar + p).getPath();
         try (FileInputStream inputFile = new FileInputStream(path)) {
             Properties properties = new Properties();
             properties.load(inputFile);

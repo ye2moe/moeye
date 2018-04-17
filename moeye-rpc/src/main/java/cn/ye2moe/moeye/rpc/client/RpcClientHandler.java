@@ -9,10 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 
 /**
  * Created by luxiaoxun on 2016-03-14.
@@ -73,7 +71,6 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<Message<RpcRes
         RPCFuture rpcFuture = new RPCFuture(request);
         pendingRPC.put(request.getHeader().getMessageID(), rpcFuture);
         channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-
             public void operationComplete(ChannelFuture future) {
                 latch.countDown();
             }
