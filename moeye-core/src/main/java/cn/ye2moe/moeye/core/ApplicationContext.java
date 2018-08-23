@@ -83,6 +83,10 @@ public final class ApplicationContext {
         if(context.instanceCache.containsKey(annotationClass)){
             return context.instanceCache.get(annotationClass);
         }
+        if(!context.annotationMap.containsKey(annotationClass)){
+            logger.warn("annotationMap map do not containsKey" + annotationClass.getName());
+            return Collections.emptyMap();
+        }
 
         Map<String ,Object> instanceMap = new HashMap<>();
 

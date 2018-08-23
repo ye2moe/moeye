@@ -70,6 +70,7 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
 
         if (objs == null) {
             logger.warn(request.uri() + ": no mapping");
+            response.content().writeBytes((request.uri() + " 404").getBytes());
             return;
         }
         try {
