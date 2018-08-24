@@ -12,8 +12,8 @@ public class BaseController {
 
     @RequestMapping("hello")
     @ResponseBody
-    public String hello(@RequestParam(value = "username",require = false)String username){
-        return helloService.hello(username);
+    public String hello(@IP String ip){
+        return ip;
     }
 
 

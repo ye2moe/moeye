@@ -83,6 +83,7 @@ public class MoeyeProperties {
         if (matcher.find()) {
             String key = matcher.group(1);
             String val = properties.getProperty(key);
+            if(val==null)return"";
             value = matcher.replaceFirst(val);
         }
         return value;

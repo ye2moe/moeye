@@ -1,8 +1,12 @@
 package cn.ye2moe.moeye.web.core.server;
 
+import cn.ye2moe.moeye.web.annotation.IP;
 import cn.ye2moe.moeye.web.annotation.RequestParam;
 import cn.ye2moe.moeye.web.annotation.ResponseBody;
+import cn.ye2moe.moeye.web.annotation.SocketAddress;
 import cn.ye2moe.moeye.web.core.server.ioc.InversionHold;
+import com.google.gson.Gson;
+import com.google.gson.annotations.Since;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -12,13 +16,14 @@ import org.apache.log4j.Logger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 
 public class HttpServerHandler extends ChannelInboundHandlerAdapter {
 
-    private Logger logger =  Logger.getLogger(HttpServerHandler.class);
+    private Logger logger = Logger.getLogger(HttpServerHandler.class);
 
 
     private final static String LOC = "302";
@@ -41,12 +46,13 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             boolean keepaLive = HttpUtil.isKeepAlive(request);
             //System.out.println("method " + request.method());
             String uri = request.uri().replace("/", "").trim();
+
             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
             if (mapStatus.get(uri) != null) {
                 response.setStatus(mapStatus.get(uri));
                 response.content().writeBytes(mapStatus.get(uri).toString().getBytes());
             } else {
-                doRequest(request,response);
+                doRequest(ctx, request, response);
             }
             //重定向处理
             /*
@@ -64,18 +70,28 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void doRequest(HttpRequest request, FullHttpResponse response) {
-        logger.info(String.format("uri:[%s]" , request.uri()));
-        Object objs[] = InversionHold.handle(request.uri());
+    private void doRequest(ChannelHandlerContext ctx, HttpRequest request, FullHttpResponse response) {
+        InetSocketAddress inSocket = (InetSocketAddress) ctx.channel()
+                .remoteAddress();
+        String uri = request.uri();
+        if(request.uri().startsWith("http")){
+            int i = request.uri().indexOf(inSocket.getHostName()) + inSocket.getHostName().length();
+            //int j = request.uri().indexOf("/",i);
+            uri = request.uri().substring(i);
+        }
+        uri = uri.replaceAll("/+","/");
+
+        logger.info(String.format("uri:[%s]", uri));
+        Object objs[] = InversionHold.handle(uri);
 
         if (objs == null) {
-            logger.warn(request.uri() + ": no mapping");
-            response.content().writeBytes((request.uri() + " 404").getBytes());
+            logger.warn(uri + ": no mapping");
+            response.content().writeBytes((uri + " 404").getBytes());
             return;
         }
         try {
-            invoke(objs[0],(Method) objs[1], request, response);
-            logger.info(String.format("method:[%s]" , ((Method) objs[1]).getName()));
+            invoke(ctx, objs[0], (Method) objs[1], request, response);
+            logger.info(String.format("method:[%s]", ((Method) objs[1]).getName()));
         } catch (IllegalAccessException e) {
             logger.error(e.getMessage());
         } catch (InvocationTargetException e) {
@@ -85,25 +101,17 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private static void invoke(Object service, Method execute, HttpRequest request, FullHttpResponse response) throws NoSuchParameter, IllegalAccessException, InvocationTargetException {
-        /*
-        String method = httpRequest.method().name();
-        if (methodCheck(service.getClass(), method)) return;
 
-        if(service.getClass().isAnnotationPresent(PostMapping.class)){
-            if(method != "GET"){
-                System.out.println(service.getClass().getSimpleName()+"："+ method +" method not support!");
-                return;
-            }
-        }
-        */
+    private static void invoke(ChannelHandlerContext ctx, Object service, Method execute, HttpRequest request, FullHttpResponse response) throws NoSuchParameter, IllegalAccessException, InvocationTargetException {
+        //TODO 区别post get等方法
         Annotation ass[][] = execute.getParameterAnnotations();
         Class parameterTypes[] = execute.getParameterTypes();
+
         Object[] params = new Object[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
             //参数是否有注解
             Class pt = parameterTypes[i];
-            //System.out.println(pt.getName());
+            //根据RequestParam的参数配置注入
             for (Annotation p : ass[i]) {
                 if (p.annotationType().equals(RequestParam.class)) {
                     RequestParam requestParam = (RequestParam) p;
@@ -112,8 +120,19 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
                     if (requestParam.require() && "".equals(username))
                         throw new NoSuchParameter(requestParam.value() + " param not contains");
                     params[i] = username;
+                } else if (p.annotationType().equals(IP.class)) {
+                    String clientIP = request.headers().get("X-Forwarded-For");
+                    if (clientIP == null) {
+                        InetSocketAddress inSocket = (InetSocketAddress) ctx.channel()
+                                .remoteAddress();
+                        clientIP = inSocket.getAddress().getHostAddress();
+                    }
+                    params[i] = clientIP;
+                } else if(p.annotationType().equals(SocketAddress.class)){
+                    params[i] = ctx.channel().remoteAddress();
                 }
             }
+            //根据类型注入
             if (pt.equals(HttpResponse.class)) {
                 params[i] = response;
             } else if (pt.equals(HttpRequest.class)) {
@@ -123,25 +142,19 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
 
         //throw new IllegalArgumentException("argument type mismatch");
 
-
         Object obj = execute.invoke(service, params);
 
-        boolean isJsonBack = false;
-
-        for (Annotation methodAnno : execute.getAnnotations()) {
-            if (methodAnno.annotationType().equals(ResponseBody.class)) {
-                response.content().writeBytes(obj.toString().getBytes());
-                isJsonBack = true;
-            }
-        }
-        if(!isJsonBack){
+        if (execute.isAnnotationPresent(ResponseBody.class)) {
+            String json = new Gson().toJson(obj, execute.getReturnType());
+            response.content().writeBytes(json.getBytes());
+        } else {
             response.setStatus(HttpResponseStatus.FOUND);
             response.headers().set(HttpHeaderNames.LOCATION, obj);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         System.out.println(cause.getMessage());
         //logger.error(cause.getMessage());
         ctx.close();
