@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 /**
- * @author yezwei（zhiwei.ye@ucarinc.com）
+ * @author yezwei（ye2moe@gmail.com）
  * @version 2018/8/23
  * @date 2018/08/23 10:37
  */
